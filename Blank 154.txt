@@ -1,0 +1,47 @@
+```python
+import requests
+from twilio.rest import Client
+
+# Alpha Vantage API parameters
+ALPHA_VANTAGE_API_KEY = 'your_alpha_vantage_api_key'
+STOCK_SYMBOL = 'your_stock_symbol'
+
+# Twilio account details
+TWILIO_ACCOUNT_SID = 'your_twilio_account_sid'
+TWILIO_AUTH_TOKEN = 'your_twilio_auth_token'
+TWILIO_PHONE_NUMBER = 'your_twilio_phone_number'
+RECIPIENT_PHONE_NUMBER = 'your_recipient_phone_number'
+
+# Parameters to trigger the text message
+TARGET_PRICE = 100  # Specify the target price to trigger the alert
+PERCENTAGE_THRESHOLD = 10  # Specify the percentage change threshold to trigger the alert
+
+# Retrieve stock data from Alpha Vantage
+url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={STOCK_SYMBOL}&apikey={ALPHA_VANTAGE_API_KEY}'
+response = requests.get(url)
+data = response.json()
+
+# Extract relevant information from the response
+symbol = data['Global Quote']['01. symbol']
+price = float(data['Global Quote']['05. price'])
+previous_close = float(data['Global Quote']['08. previous close'])
+
+# Calculate the percentage change
+percentage_change = (price - previous_close) / previous_close * 100
+
+# Check if the stock meets the trigger parameters
+if price >= TARGET_PRICE or percentage_change >= PERCENTAGE_THRESHOLD:
+    # Initialize Twilio client
+    client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+    # Compose the message
+    message = f'Stock Alert: {symbol} is currently ${price:.2f} ' \
+              f'({percentage_change:+.2f}% from previous close).'
+
+    # Send the text message
+    client.messages.create(
+        body=message,
+        from_=TWILIO_PHONE_NUMBER,
+        to=RECIPIENT_PHONE_NUMBER
+    )
+```
